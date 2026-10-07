@@ -68,6 +68,32 @@ def test_full_flow_mock(auth):
     assert Decimal(fl["units"]) == Decimal("100") - Decimal(o["usdt_send"])
 
 
+def test_redirect_methods_mockpay(auth):
+    """natcash/kashpaw/carte/all -> URL mockpay; peman sou paj la konfime lòd la."""
+    c, csrf = auth["client"], auth["csrf"]
+    _mk_refill(c, csrf, usdt=100, rate=130)
+
+    r = _mk_order(c, csrf, 500, method="natcash", phone=None, confirm_loss=True)
+    assert r.status_code == 200, r.text
+    o = r.json()
+    assert o["status"] == "awaiting_payment"
+    assert o["payment_url"].startswith("/mockpay.html?tx=")
+
+    tx = o["payment_url"].split("tx=")[1]
+    r = c.get(f"/api/mock/pay/{tx}")
+    assert r.status_code == 200 and r.json()["trans_status"] == "no"
+
+    r = c.post(f"/api/mock/pay/{tx}", json={"result": "ok"})
+    assert r.status_code == 200
+
+    o = _wait_confirmed(c, csrf, o["id"])
+    assert o["status"] == "confirmed", o
+    assert o["tx_hash"]
+
+    # Rejwe sou menm tranzaksyon an refize
+    assert c.post(f"/api/mock/pay/{tx}", json={"result": "ok"}).status_code == 400
+
+
 # ---------- tès 3-5: webhook ----------
 
 def _signed_body(payload: dict, secret="mock-secret"):

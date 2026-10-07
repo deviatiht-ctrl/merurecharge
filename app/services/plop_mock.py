@@ -62,7 +62,7 @@ class PlopMockClient:
         bal = _dec(get_setting(self.db, "mock_plop_balance", "100000"))
         set_setting(self.db, "mock_plop_balance", str(bal + montant))
         self.db.commit()
-        url = f"/mockpay.html?tx={tx_id}" if method == "moncash" else None
+        url = f"/mockpay.html?tx={tx_id}" if method != "moncash_ussd" else None
         return {"status": "success", "message": "Peman kreye (mock)",
                 "url": url, "transaction_id": tx_id}
 

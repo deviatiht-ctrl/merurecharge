@@ -75,7 +75,7 @@ class QuoteBody(BaseModel):
 
 class CreateBody(BaseModel):
     amount_htg: Decimal = Field(gt=0, le=Decimal("100000000"))
-    method: str = Field(pattern="^(moncash|moncash_ussd)$")
+    method: str = Field(pattern="^(moncash|moncash_ussd|natcash|kashpaw|carte|all)$")
     phone: str | None = None
     confirm_loss: bool = False
 
