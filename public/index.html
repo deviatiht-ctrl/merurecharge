@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meru Auto Recharge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Bannyè mòd -->
+  <div id="mode-banner" class="mode-banner mock">
+    <i data-lucide="flask-conical"></i>
+    <span id="mode-banner-text">MOD SIMILASYON</span>
+  </div>
+
+  <!-- Navbar -->
+  <nav id="navbar" class="navbar hidden">
+    <div class="nav-inner">
+      <a href="#dashboard" class="brand">
+        <i data-lucide="zap"></i><span>Meru&nbsp;Auto</span>
+      </a>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Menyi">
+        <i data-lucide="menu"></i>
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="#dashboard" data-nav="dashboard"><i data-lucide="layout-dashboard"></i><span>Tablòbo</span></a>
+        <a href="#new" data-nav="new"><i data-lucide="plus-circle"></i><span>Nouvo rechaj</span></a>
+        <a href="#orders" data-nav="orders"><i data-lucide="list"></i><span>Lòd</span></a>
+        <a href="#float" data-nav="float"><i data-lucide="wallet"></i><span>Float</span></a>
+        <a href="#settings" data-nav="settings"><i data-lucide="settings"></i><span>Paramèt</span></a>
+        <a href="#audit" data-nav="audit"><i data-lucide="scroll-text"></i><span>Jounal</span></a>
+        <button id="btn-logout" class="nav-logout"><i data-lucide="log-out"></i><span>Soti</span></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="app">
+
+    <!-- LOGIN / SETUP -->
+    <section id="view-login" class="view hidden">
+      <div class="auth-card">
+        <i data-lucide="shield-check" class="auth-icon"></i>
+        <h1 id="auth-title">Konekte</h1>
+        <p id="auth-sub" class="muted">Antre modpas ou a</p>
+        <form id="form-auth">
+          <label class="field">
+            <span>Modpas</span>
+            <input type="password" id="auth-password" required minlength="8"
+                   autocomplete="current-password" placeholder="Omwen 8 karaktè">
+          </label>
+          <button type="submit" class="btn btn-primary btn-block" id="auth-btn">
+            <i data-lucide="log-in"></i><span>Konekte</span>
+          </button>
+        </form>
+        <p id="auth-error" class="error-text hidden"></p>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view hidden">
+      <div class="page-head">
+        <h1>Tablòbo</h1>
+        <div id="sys-status" class="status-pill">
+          <span class="dot ok"></span><span id="sys-status-text">Otomatik ON</span>
+        </div>
+      </div>
+
+      <div class="grid cards">
+        <div class="card">
+          <div class="card-label"><i data-lucide="wallet"></i> Solde float</div>
+          <div class="card-value" id="dash-float">—</div>
+          <div class="card-sub" id="dash-float-sub"></div>
+        </div>
+        <div class="card">
+          <div class="card-label"><i data-lucide="banknote"></i> Balans PLOP</div>
+          <div class="card-value" id="dash-plop">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label"><i data-lucide="trending-down"></i> Pèt kimile (30 j)</div>
+          <div class="card-value" id="dash-loss">—</div>
+        </div>
+        <div class="card">
+          <div class="card-label"><i data-lucide="percent"></i> Taux efektif mwayèn</div>
+          <div class="card-value" id="dash-rate">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><i data-lucide="activity"></i> Dènye lòd yo</h2>
+        <div id="dash-orders" class="table-wrap"><p class="muted">Chajman…</p></div>
+      </div>
+
+      <div class="panel">
+        <h2><i data-lucide="bar-chart-3"></i> Pèt pa mwa</h2>
+        <div class="chart-wrap"><canvas id="loss-chart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- NOUVO RECHAJ -->
+    <section id="view-new" class="view hidden">
+      <div class="page-head"><h1>Nouvo rechaj</h1></div>
+      <div class="two-col">
+        <div class="panel">
+          <form id="form-order">
+            <label class="field">
+              <span>Kantite HTG</span>
+              <input type="number" id="o-amount" min="20" step="0.01" required placeholder="500">
+            </label>
+            <label class="field">
+              <span>Metòd peman</span>
+              <select id="o-method">
+                <option value="moncash_ussd">MonCash USSD (*202#)</option>
+                <option value="moncash">MonCash (redireksyon)</option>
+              </select>
+            </label>
+            <label class="field" id="o-phone-wrap">
+              <span>Nimewo telefòn</span>
+              <input type="tel" id="o-phone" placeholder="509XXXXXXXX" pattern="509[0-9]{8}">
+            </label>
+            <div id="quote-box" class="quote-box hidden"></div>
+            <div id="loss-warn" class="alert-warn hidden"></div>
+            <button type="submit" class="btn btn-primary btn-block" id="o-submit">
+              <i data-lucide="send"></i><span>Lanse rechaj</span>
+            </button>
+            <p class="error-text hidden" id="o-error"></p>
+          </form>
+        </div>
+        <div class="panel">
+          <h2><i data-lucide="list-checks"></i> Pwogrè</h2>
+          <div id="order-timeline" class="timeline">
+            <p class="muted">Lanse yon rechaj pou wè pwogrè a la.</p>
+          </div>
+          <div id="order-result" class="hidden"></div>
+          <div id="mock-controls" class="mock-controls hidden">
+            <button class="btn btn-ghost" id="btn-accelerate"><i data-lucide="fast-forward"></i> Akselere peman</button>
+            <button class="btn btn-ghost danger" id="btn-sim-fail"><i data-lucide="x-circle"></i> Simile echèk</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LÒD -->
+    <section id="view-orders" class="view hidden">
+      <div class="page-head">
+        <h1>Lòd</h1>
+        <div class="head-actions">
+          <select id="orders-filter">
+            <option value="">Tout estati</option>
+            <option value="awaiting_payment">Apè peman</option>
+            <option value="paid">Peye</option>
+            <option value="sent">Voye</option>
+            <option value="confirmed">Konfime</option>
+            <option value="failed_payment">Peman echwe</option>
+            <option value="expired">Ekspire</option>
+            <option value="needs_approval">Apwobasyon</option>
+            <option value="send_failed">Voye echwe</option>
+            <option value="cancelled">Anile</option>
+          </select>
+          <a class="btn btn-ghost" href="/api/orders/export.csv"><i data-lucide="download"></i> CSV</a>
+        </div>
+      </div>
+      <div class="panel"><div id="orders-table" class="table-wrap"><p class="muted">Chajman…</p></div></div>
+      <div id="order-detail" class="panel hidden"></div>
+    </section>
+
+    <!-- FLOAT -->
+    <section id="view-float" class="view hidden">
+      <div class="page-head"><h1>Float</h1></div>
+      <div id="float-alert" class="alert-warn hidden">
+        <i data-lucide="alert-triangle"></i> Solde float la anba sèy la!
+      </div>
+      <div class="grid cards">
+        <div class="card"><div class="card-label"><i data-lucide="coins"></i> Solde</div>
+          <div class="card-value" id="float-balance">—</div></div>
+        <div class="card"><div class="card-label"><i data-lucide="repeat"></i> Rechaj ki rete</div>
+          <div class="card-value" id="float-remaining">—</div></div>
+        <div class="card"><div class="card-label"><i data-lucide="sigma"></i> Taux mwayèn</div>
+          <div class="card-value" id="float-rate">—</div></div>
+        <div class="card"><div class="card-label"><i data-lucide="piggy-bank"></i> Kòst float</div>
+          <div class="card-value" id="float-cost">—</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h2><i data-lucide="plus"></i> Ranpli float</h2>
+          <form id="form-refill">
+            <label class="field"><span>HTG depanse</span>
+              <input type="number" id="r-htg" step="0.01" required></label>
+            <label class="field"><span>USDT/USDC resevwa</span>
+              <input type="number" id="r-usdt" step="0.000001" required></label>
+            <label class="field"><span>Sous</span>
+              <select id="r-source">
+                <option value="p2p">P2P</option>
+                <option value="echanj">Echanj</option>
+                <option value="kanmbis">Kanmbis</option>
+              </select></label>
+            <label class="field"><span>Hash (opsyonèl)</span>
+              <input type="text" id="r-hash"></label>
+            <button class="btn btn-primary btn-block"><i data-lucide="check"></i> Anrejistre</button>
+            <p class="error-text hidden" id="r-error"></p>
+          </form>
+        </div>
+        <div class="panel">
+          <h2><i data-lucide="history"></i> Istorik ranpli</h2>
+          <div id="refill-table" class="table-wrap"><p class="muted">—</p></div>
+          <h2 style="margin-top:1.5rem"><i data-lucide="arrow-down-to-line"></i> Retire HTG (PLOP)</h2>
+          <form id="form-withdraw" class="inline-form">
+            <input type="number" id="w-amount" step="0.01" min="20" placeholder="Montan HTG" required>
+            <select id="w-method"><option value="moncash">MonCash</option><option value="natcash">NatCash</option></select>
+            <input type="tel" id="w-recipient" placeholder="509XXXXXXXX" required>
+            <button class="btn btn-ghost"><i data-lucide="send"></i> Retire</button>
+          </form>
+          <p class="error-text hidden" id="w-error"></p>
+          <p class="ok-text hidden" id="w-ok"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARAMÈT -->
+    <section id="view-settings" class="view hidden">
+      <div class="page-head"><h1>Paramèt</h1></div>
+
+      <div class="panel" id="panel-mode">
+        <h2><i data-lucide="toggle-left"></i> Mòd operasyon</h2>
+        <p class="muted" id="mode-desc"></p>
+        <label class="check">
+          <input type="checkbox" id="meru-check">
+          <span>Mwen verifye rezo a ak memo a nan app Meru a</span>
+        </label>
+        <div class="btn-row">
+          <button class="btn btn-warn" id="btn-mode"><i data-lucide="alert-triangle"></i> <span id="btn-mode-text">Pase an MOD REYÈL</span></button>
+          <button class="btn btn-danger" id="btn-kill"><i data-lucide="octagon"></i> <span id="btn-kill-text">Sispann voye otomatik</span></button>
+        </div>
+        <div id="preflight-box" class="hidden"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2><i data-lucide="percent"></i> Frè ak limit</h2>
+          <form id="form-settings">
+            <label class="field"><span>Taux referans (HTG/USD)</span>
+              <input type="number" id="s-ref" step="0.01"></label>
+            <label class="field"><span>Frè PLOP (%)</span>
+              <input type="number" id="s-fee" step="0.01"></label>
+            <label class="field"><span>Modèl frè</span>
+              <select id="s-feemodel">
+                <option value="dedwi">Dedwi nan montan an</option>
+                <option value="sou_tet">Sou tèt montan an</option>
+              </select></label>
+            <label class="field"><span>Frè rezo (USDT)</span>
+              <input type="number" id="s-feenet" step="0.0001"></label>
+            <label class="field"><span>Frè Meru (USDT)</span>
+              <input type="number" id="s-feemeru" step="0.0001"></label>
+            <label class="field"><span>Limit pèt (%)</span>
+              <input type="number" id="s-loss" step="0.1"></label>
+            <label class="field"><span>Maks pa lòd (HTG)</span>
+              <input type="number" id="s-maxorder"></label>
+            <label class="field"><span>Maks pa jou (HTG)</span>
+              <input type="number" id="s-maxday"></label>
+            <label class="field"><span>Rezèv float (USDT)</span>
+              <input type="number" id="s-reserve" step="0.01"></label>
+            <label class="field"><span>Alèt float anba (USDT)</span>
+              <input type="number" id="s-alert" step="0.01"></label>
+            <button class="btn btn-primary btn-block"><i data-lucide="save"></i> Sove</button>
+          </form>
+        </div>
+
+        <div>
+          <div class="panel">
+            <h2><i data-lucide="map-pin"></i> Adrès Meru</h2>
+            <div id="meru-current" class="muted"></div>
+            <form id="form-meru">
+              <label class="field"><span>Adrès</span>
+                <input type="text" id="m-address" required></label>
+              <label class="field"><span>Memo (si Meru mande l)</span>
+                <input type="text" id="m-memo"></label>
+              <label class="check">
+                <input type="checkbox" id="m-verified">
+                <span>Mwen verifye rezo a ak memo a nan app Meru a</span>
+              </label>
+              <label class="field"><span>Modpas (konfimasyon)</span>
+                <input type="password" id="m-password" required></label>
+              <p class="muted small">Yon chanjman adrès pran 10 minit anvan li aktif.</p>
+              <button class="btn btn-primary btn-block"><i data-lucide="save"></i> Sove adrès</button>
+              <p class="error-text hidden" id="m-error"></p>
+              <p class="ok-text hidden" id="m-ok"></p>
+            </form>
+          </div>
+          <div class="panel">
+            <h2><i data-lucide="key"></i> Modpas</h2>
+            <form id="form-password">
+              <label class="field"><span>Modpas aktyèl</span>
+                <input type="password" id="p-current" required></label>
+              <label class="field"><span>Nouvo modpas</span>
+                <input type="password" id="p-new" minlength="8" required></label>
+              <button class="btn btn-ghost btn-block"><i data-lucide="key-round"></i> Chanje modpas</button>
+              <p class="error-text hidden" id="p-error"></p>
+              <p class="ok-text hidden" id="p-ok"></p>
+            </form>
+          </div>
+          <div class="panel">
+            <h2><i data-lucide="network"></i> Rezo</h2>
+            <form id="form-network" class="inline-form">
+              <select id="n-network">
+                <option value="stellar">Stellar (USDC)</option>
+                <option value="trc20">TRON TRC-20 (USDT)</option>
+              </select>
+              <button class="btn btn-ghost"><i data-lucide="save"></i> Sove</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JOUNAL -->
+    <section id="view-audit" class="view hidden">
+      <div class="page-head"><h1>Jounal odit</h1></div>
+      <div class="panel"><div id="audit-table" class="table-wrap"><p class="muted">Chajman…</p></div></div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="offline" class="offline hidden">
+    <i data-lucide="wifi-off"></i> Backend la deconekte — m ap eseye ankò…
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
