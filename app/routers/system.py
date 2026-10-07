@@ -4,13 +4,14 @@ import time
 from datetime import timedelta
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .. import config, events, worker
 from ..db import get_db, get_setting, is_mock
-from ..models import AuditLog, Order, utcnow
+from ..models import AuditLog, MockPlopTx, Order, utcnow
 from ..security import check_cron_secret, current_session
 
 router = APIRouter(prefix="/api", tags=["system"])
@@ -124,6 +125,48 @@ def cron_tick(request: Request, db: Session = Depends(get_db)):
     check_cron_secret(request)
     worker.run_tick(db)
     return {"ok": True}
+
+
+# ---------- Paj peman mock (piblik, mock sèlman) ----------
+
+def _get_mock_tx(db, tx_id: str) -> MockPlopTx:
+    if not is_mock(db):
+        raise HTTPException(403, "Disponib an mòd similasyon sèlman")
+    tx = db.query(MockPlopTx).filter(
+        MockPlopTx.transaction_id == tx_id).first()
+    if tx is None:
+        raise HTTPException(404, "Tranzaksyon pa jwenn")
+    return tx
+
+
+@router.get("/mock/pay/{tx_id}")
+def mock_pay_info(tx_id: str, db: Session = Depends(get_db)):
+    tx = _get_mock_tx(db, tx_id)
+    return {"transaction_id": tx.transaction_id,
+            "reference_id": tx.reference_id, "amount": tx.amount,
+            "method": tx.method, "trans_status": tx.trans_status}
+
+
+class MockPayBody(BaseModel):
+    result: str  # ok | failed
+
+
+@router.post("/mock/pay/{tx_id}")
+def mock_pay_complete(tx_id: str, body: MockPayBody,
+                      db: Session = Depends(get_db)):
+    tx = _get_mock_tx(db, tx_id)
+    if tx.trans_status != "no":
+        raise HTTPException(400, "Tranzaksyon sa a deja fini")
+    if body.result not in ("ok", "failed"):
+        raise HTTPException(400, "result dwe 'ok' oswa 'failed'")
+    tx.trans_status = body.result
+    db.commit()
+    # Trete lòd la tousuit — pa bezwen tann tick la
+    try:
+        worker.run_tick(db)
+    except Exception:
+        pass
+    return {"ok": True, "trans_status": tx.trans_status}
 
 
 @router.get("/system/tables")

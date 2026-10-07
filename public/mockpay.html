@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MonCash — Peman (Similasyon)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: system-ui, sans-serif; }
+  body { background: #f4f4f5; min-height: 100vh; display: flex;
+         align-items: center; justify-content: center; padding: 16px; }
+  .card { background: #fff; border-radius: 16px; max-width: 400px; width: 100%;
+          overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+  .head { background: #e60012; color: #fff; padding: 20px; text-align: center; }
+  .head h1 { font-size: 22px; letter-spacing: .5px; }
+  .head small { opacity: .85; }
+  .body { padding: 24px; }
+  .amt { font-size: 34px; font-weight: 700; text-align: center; margin: 8px 0 2px; }
+  .ref { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px;
+         word-break: break-all; }
+  .banner { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e;
+            border-radius: 8px; padding: 10px 12px; font-size: 13px;
+            margin-bottom: 16px; text-align: center; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 10px;
+         padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;
+         margin-top: 10px; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .pay { background: #e60012; color: #fff; }
+  .fail { background: #fff; color: #b91c1c; border: 1px solid #fca5a5; }
+  .back { display: block; text-align: center; margin-top: 18px; color: #555;
+          font-size: 14px; }
+  .done { text-align: center; padding: 12px 0 4px; font-size: 16px; }
+  .done.ok { color: #15803d; } .done.ko { color: #b91c1c; }
+  .err { color: #b91c1c; text-align: center; font-size: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head"><h1>MonCash</h1><small>Peman anliy — Digicel</small></div>
+  <div class="body">
+    <div class="banner">SIMILASYON — okenn lajan reyèl pa deplase</div>
+    <div id="loading">Chajman…</div>
+    <div id="main" hidden>
+      <div class="amt" id="amt"></div>
+      <div class="ref" id="ref"></div>
+      <button class="btn pay" id="pay">Peye kounye a</button>
+      <button class="btn fail" id="fail">Simile yon echèk</button>
+      <div class="err" id="err"></div>
+    </div>
+    <div class="done" id="done" hidden></div>
+    <a class="back" href="/">← Retounen nan Meru Recharge</a>
+  </div>
+</div>
+<script>
+const tx = new URLSearchParams(location.search).get("tx");
+const $ = id => document.getElementById(id);
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || "Erè " + r.status);
+  return j;
+}
+
+async function load() {
+  if (!tx) { $("loading").textContent = "Tranzaksyon pa jwenn (pa gen ?tx=)"; return; }
+  try {
+    const info = await api("/api/mock/pay/" + encodeURIComponent(tx));
+    $("amt").textContent = Number(info.amount).toLocaleString("fr-HT") + " HTG";
+    $("ref").textContent = "Ref: " + info.reference_id + " · " + tx;
+    if (info.trans_status !== "no") {
+      $("loading").hidden = true;
+      $("done").hidden = false;
+      $("done").textContent = "Tranzaksyon sa a deja fini (" + info.trans_status + ")";
+      return;
+    }
+    $("loading").hidden = true;
+    $("main").hidden = false;
+  } catch (e) { $("loading").textContent = "Erè: " + e.message; }
+}
+
+async function complete(result) {
+  $("pay").disabled = $("fail").disabled = true;
+  $("err").textContent = "";
+  try {
+    await api("/api/mock/pay/" + encodeURIComponent(tx), {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({result})
+    });
+    $("main").hidden = true;
+    const d = $("done");
+    d.hidden = false;
+    d.className = "done " + (result === "ok" ? "ok" : "ko");
+    d.textContent = result === "ok"
+      ? "Peman reyisi — retounen nan app la pou wè konfimasyon an."
+      : "Peman an echwe — lòd la pral make 'failed_payment'.";
+  } catch (e) {
+    $("err").textContent = e.message;
+    $("pay").disabled = $("fail").disabled = false;
+  }
+}
+
+$("pay").onclick = () => complete("ok");
+$("fail").onclick = () => complete("failed");
+load();
+</script>
+</body>
+</html>
