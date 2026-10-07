@@ -44,17 +44,24 @@ Frontend la se `public/` (Vercel sèvi l nativ sou CDN), backend la se
 SQLite fichye a **pa pèsistan** sou serverless — chak fonksyon gen disk tanporè.
 Ou dwe itilize yon baz done ekstèn:
 
-**Turso (rekòmande — konpatib SQLite, gratis):**
+**Supabase (rekòmande — Postgres hosted, gratis):**
+1. Kreye yon pwojè sou supabase.com
+2. Dashboard → **Connect** → kopye chain "Transaction pooler" la (port 6543 — enpòtan pou serverless):
+```
+DATABASE_URL=postgresql://postgres.<ref>:<modpas>@aws-0-<rejyonal>.pooler.supabase.com:6543/postgres?sslmode=require
+```
+Tablo yo kreye otomatikman (`init_db`) nan premye request la — pa gen migrasyon
+manyèl. Pa aktive RLS sou tablo yo (backend la jere sekirite a).
+
+**Turso (konpatib SQLite):**
 ```bash
 turso db create meru-auto
 turso db show meru-auto --url        # libsql://xxx.turso.io
 turso db tokens create meru-auto     # token
 ```
-Nan Vercel env vars:
 ```
 DATABASE_URL=sqlite+libsql://xxx.turso.io?authToken=<token>&secure=true
 ```
-Oswa Postgres (Neon, Supabase): `DATABASE_URL=postgresql://user:pass@host/db`
 
 ### 2. Varyab anviwònman sou Vercel
 ```
@@ -62,7 +69,7 @@ PLOP_CLIENT_ID=...
 PLOP_CLIENT_SECRET=...
 SESSION_SECRET=<jenere yon chàn long, ex: openssl rand -hex 32>
 CRON_SECRET=<yon lòt chàn sekrè>
-DATABASE_URL=<pi wo a>
+DATABASE_URL=<Supabase pooler URL — gade pi wo>
 MOCK_MODE=true        # kite true pandan ou teste
 # An MOD REYÈL sèlman:
 WALLET_SECRET=...

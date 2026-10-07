@@ -18,8 +18,26 @@ def _normalize_url(url: str) -> str:
 
 
 _url = _normalize_url(config.DATABASE_URL)
-_connect_args = {"check_same_thread": False} if _url.startswith("sqlite:///") else {}
-engine = create_engine(_url, connect_args=_connect_args, pool_pre_ping=True)
+
+# Connect args + pool selon dialect
+if _url.startswith("sqlite:///"):
+    _connect_args = {"check_same_thread": False}
+    _pool_kw = {}
+elif "psycopg" in _url:
+    # Supabase/Supavisor (port 6543, transaction mode) pa sipòte prepared
+    # statements — prepare_threshold=None dezaktive yo nan psycopg3.
+    _connect_args = {"prepare_threshold": None}
+    _pool_kw = {}
+else:
+    _connect_args = {}
+    _pool_kw = {}
+
+# Sou serverless, ti pool + resikle koneksyon yo (Supabase limite koneksyon)
+if config.IS_VERCEL and "sqlite" not in _url:
+    _pool_kw.update(pool_size=1, max_overflow=1, pool_recycle=300)
+
+engine = create_engine(_url, connect_args=_connect_args, pool_pre_ping=True,
+                       **_pool_kw)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 Base = declarative_base()
 
