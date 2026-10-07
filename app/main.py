@@ -6,6 +6,7 @@ Vercel: detekte otomatikman kòm entrypoint (framework preset FastAPI).
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -76,6 +77,13 @@ app.include_router(float_router.router)
 app.include_router(settings.router)
 app.include_router(webhook.router)
 app.include_router(system.router)
+
+
+@app.exception_handler(Exception)
+async def unhandled(request, exc):
+    """Retounen erè a an JSON olye HTML 500 — frontend la ka montre l."""
+    return JSONResponse({"detail": f"{type(exc).__name__}: {exc}"},
+                        status_code=500)
 
 # Frontend — 'public/' la: Vercel sèvi l natif, lokalman StaticFiles.
 public_dir = config.BASE_DIR / "public"

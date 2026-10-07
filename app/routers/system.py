@@ -126,6 +126,15 @@ def cron_tick(request: Request, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
+@router.get("/system/tables")
+def db_tables(db: Session = Depends(get_db), _s=Depends(current_session)):
+    """Diagnostik: lis tablo yo ki egziste nan baz done a."""
+    from sqlalchemy import inspect
+    from ..db import engine
+    return {"tables": sorted(inspect(engine).get_table_names()),
+            "dialect": engine.dialect.name}
+
+
 @router.get("/audit")
 def audit_log(limit: int = 200, db: Session = Depends(get_db),
               _s=Depends(current_session)):
