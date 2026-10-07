@@ -16,13 +16,13 @@ ORDER_FINAL = ("confirmed", "failed_payment", "expired", "needs_approval",
 
 
 class Setting(Base):
-    __tablename__ = "settings"
+    __tablename__ = "meru_settings"
     key = Column(String(64), primary_key=True)
     value = Column(JSON)
 
 
 class Order(Base):
-    __tablename__ = "orders"
+    __tablename__ = "meru_orders"
 
     id = Column(Integer, primary_key=True)
     reference_id = Column(String(40), unique=True, nullable=False, index=True)
@@ -70,7 +70,7 @@ class Order(Base):
 
 
 class FloatRefill(Base):
-    __tablename__ = "float_refills"
+    __tablename__ = "meru_float_refills"
     id = Column(Integer, primary_key=True)
     htg_spent = Column(String(32), nullable=False)
     usdt_received = Column(String(32), nullable=False)
@@ -82,7 +82,7 @@ class FloatRefill(Base):
 
 
 class Withdrawal(Base):
-    __tablename__ = "withdrawals"
+    __tablename__ = "meru_withdrawals"
     id = Column(Integer, primary_key=True)
     reference = Column(String(40), unique=True, nullable=False)
     amount = Column(String(32), nullable=False)
@@ -95,7 +95,7 @@ class Withdrawal(Base):
 
 
 class AuditLog(Base):
-    __tablename__ = "audit_log"
+    __tablename__ = "meru_audit_log"
     id = Column(Integer, primary_key=True)
     action = Column(String(60), nullable=False, index=True)
     detail = Column(Text, nullable=True)
@@ -104,7 +104,7 @@ class AuditLog(Base):
 
 
 class Session(Base):
-    __tablename__ = "sessions"
+    __tablename__ = "meru_sessions"
     token_hash = Column(String(80), primary_key=True)
     csrf = Column(String(80), nullable=False)
     ip = Column(String(60), nullable=True)
@@ -113,7 +113,7 @@ class Session(Base):
 
 
 class LoginAttempt(Base):
-    __tablename__ = "login_attempts"
+    __tablename__ = "meru_login_attempts"
     id = Column(Integer, primary_key=True)
     ip = Column(String(60), nullable=False, index=True)
     success = Column(Boolean, default=False)
@@ -122,7 +122,7 @@ class LoginAttempt(Base):
 
 class MockPlopTx(Base):
     """Tranzaksyon peman PLOP simile — nan baz done pou siviv sou serverless."""
-    __tablename__ = "mock_plop_tx"
+    __tablename__ = "meru_mock_plop_tx"
     id = Column(Integer, primary_key=True)
     transaction_id = Column(String(80), unique=True, nullable=False)
     reference_id = Column(String(40), unique=True, nullable=False, index=True)
