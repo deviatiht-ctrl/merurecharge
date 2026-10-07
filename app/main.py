@@ -46,13 +46,21 @@ class VercelPathFixMiddleware:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    # Repriz lòd 'sending' yo apre rekòmansman — tcheke on-chain anvan reeseye
-    db = SessionLocal()
+    # Pa janm fè cold start la krache — si baz done a pa disponib,
+    # /api/health rapòte erè a olye FUNCTION_INVOCATION_FAILED.
+    from .db import engine as _engine
     try:
-        resume_sending(db)
-    finally:
-        db.close()
+        init_db()
+        if _engine is not None:
+            db = SessionLocal()
+            try:
+                resume_sending(db)
+            except Exception:
+                pass
+            finally:
+                db.close()
+    except Exception:
+        pass
     if not config.IS_VERCEL:
         start_background_worker()
     yield
