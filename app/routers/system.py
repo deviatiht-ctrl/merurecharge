@@ -17,8 +17,29 @@ router = APIRouter(prefix="/api", tags=["system"])
 
 
 @router.get("/health")
-def health(db: Session = Depends(get_db)):
-    return {"ok": True, "mock": is_mock(db), "time": utcnow().isoformat()}
+def health():
+    """Sèvi pou diagnostik — pa janm krache, rapòte eta baz done a."""
+    from ..db import ENGINE_ERROR, engine
+    from sqlalchemy import text
+    out = {"ok": True, "time": utcnow().isoformat(),
+           "vercel": config.IS_VERCEL, "db_error": None, "mock": None}
+    if ENGINE_ERROR:
+        out["ok"] = False
+        out["db_error"] = ENGINE_ERROR
+        return out
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        out["ok"] = False
+        out["db_error"] = str(e)[:300]
+        return out
+    db = next(get_db())
+    try:
+        out["mock"] = is_mock(db)
+    finally:
+        db.close()
+    return out
 
 
 @router.get("/system/status")

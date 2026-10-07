@@ -36,13 +36,25 @@ else:
 if config.IS_VERCEL and "sqlite" not in _url:
     _pool_kw.update(pool_size=1, max_overflow=1, pool_recycle=300)
 
-engine = create_engine(_url, connect_args=_connect_args, pool_pre_ping=True,
-                       **_pool_kw)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+# Si URL la pa parse (ex. yon URL https olye postgres://), pa kraze
+# import la — /api/health ap rapòte erè a klèman.
+ENGINE_ERROR = None
+try:
+    engine = create_engine(_url, connect_args=_connect_args, pool_pre_ping=True,
+                           **_pool_kw)
+    _engine_ok = engine.connect().close() or True
+except Exception as e:
+    ENGINE_ERROR = str(e)
+    engine = None
+SessionLocal = sessionmaker(bind=engine, autoflush=False,
+                            expire_on_commit=False)
 Base = declarative_base()
 
 
 def get_db():
+    if engine is None:
+        from fastapi import HTTPException
+        raise HTTPException(503, f"Baz done a pa disponib: {ENGINE_ERROR}")
     db = SessionLocal()
     try:
         yield db
@@ -54,6 +66,8 @@ def init_db():
     from . import models  # noqa: F401
     from sqlalchemy import text
 
+    if engine is None:
+        return
     Base.metadata.create_all(engine)
     _harden_postgres(text)
     seed_settings()
