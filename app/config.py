@@ -21,7 +21,12 @@ PLOP_CLIENT_SECRET = env("PLOP_CLIENT_SECRET") or "mock-secret"
 PLOP_BASE_URL = env("PLOP_BASE_URL", "https://plopplop.solutionip.app/").rstrip("/") + "/"
 
 # --- Baz done ---
-DATABASE_URL = env("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "meru.db"))
+DATABASE_URL = env("DATABASE_URL")
+if not DATABASE_URL:
+    # Sou Vercel filesystem la read-only — /tmp sèl kote ki ekrivab
+    # (ephemè! mete DATABASE_URL pou pwodiksyon). Lokalman: meru.db.
+    _db_path = "/tmp/meru.db" if IS_VERCEL else str(BASE_DIR / "meru.db")
+    DATABASE_URL = "sqlite:///" + _db_path
 TURSO_AUTH_TOKEN = env("TURSO_AUTH_TOKEN")
 
 # --- Wallet ---
