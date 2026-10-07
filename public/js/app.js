@@ -136,6 +136,8 @@ function show(name) {
 function go(name) {
   if (!VIEWS.includes(name)) name = "dashboard";
   state.view = name;
+  // Chan vi a = abandone modifikasyon ki pa sove — retounen eta sèvè a
+  document.querySelectorAll("[data-dirty]").forEach((el) => delete el.dataset.dirty);
   show(name);
   document.querySelectorAll("[data-nav]").forEach((a) =>
     a.classList.toggle("active", a.dataset.nav === name));
@@ -439,23 +441,30 @@ async function loadFloat() {
 }
 
 // ---------- paramèt ----------
+// Pa recrase yon chan itilizatè a ap modifye (polling chak 4 s)
+document.addEventListener("input", (e) => { e.target.dataset.dirty = "1"; });
+document.addEventListener("change", (e) => { e.target.dataset.dirty = "1"; });
+const setVal = (id, v) => { const el = $(id); if (!el.dataset.dirty) el.value = v ?? ""; };
+const setChk = (id, v) => { const el = $(id); if (!el.dataset.dirty) el.checked = !!v; };
+const clearDirty = (form) => form.querySelectorAll("[data-dirty]").forEach((el) => delete el.dataset.dirty);
+
 async function loadSettings() {
   const s = await get("/api/settings");
-  $("s-ref").value = s.reference_rate;
-  $("s-fee").value = s.fee_pct;
-  $("s-feemodel").value = s.fee_model;
-  $("s-feenet").value = s.fee_network;
-  $("s-feemeru").value = s.fee_meru;
-  $("s-loss").value = s.loss_limit_pct;
-  $("s-maxorder").value = s.max_order_htg;
-  $("s-maxday").value = s.max_daily_htg;
-  $("s-reserve").value = s.float_reserve;
-  $("s-alert").value = s.float_alert_below;
-  $("n-network").value = s.wallet_network;
-  $("m-address").value = s.meru_address || "";
-  $("m-memo").value = s.meru_memo || "";
-  $("m-verified").checked = !!s.meru_verified;
-  $("meru-check").checked = !!s.meru_verified;
+  setVal("s-ref", s.reference_rate);
+  setVal("s-fee", s.fee_pct);
+  setVal("s-feemodel", s.fee_model);
+  setVal("s-feenet", s.fee_network);
+  setVal("s-feemeru", s.fee_meru);
+  setVal("s-loss", s.loss_limit_pct);
+  setVal("s-maxorder", s.max_order_htg);
+  setVal("s-maxday", s.max_daily_htg);
+  setVal("s-reserve", s.float_reserve);
+  setVal("s-alert", s.float_alert_below);
+  setVal("n-network", s.wallet_network);
+  setVal("m-address", s.meru_address || "");
+  setVal("m-memo", s.meru_memo || "");
+  setChk("m-verified", s.meru_verified);
+  setChk("meru-check", s.meru_verified);
   $("meru-current").innerHTML = s.meru_address
     ? `<p>Aktif: <b>${esc(s.meru_address)}</b>${s.meru_memo ? " (memo: " + esc(s.meru_memo) + ")" : ""}</p>` +
       (s.pending_meru ? `<p class="alert-warn">Nouvo adrès ap aktive ${fmtDate(s.pending_meru.activate_at)}</p>` : "")
@@ -608,6 +617,7 @@ $("form-settings").addEventListener("submit", async (e) => {
       max_order_htg: $("s-maxorder").value, max_daily_htg: $("s-maxday").value,
       float_reserve: $("s-reserve").value, float_alert_below: $("s-alert").value,
     });
+    clearDirty(e.target);
     toast("Paramèt yo sove");
   } catch (err) { toast(err.message); }
 });
@@ -616,6 +626,7 @@ $("form-network").addEventListener("submit", async (e) => {
   e.preventDefault();
   try {
     await post("/api/settings", { wallet_network: $("n-network").value });
+    clearDirty(e.target);
     toast("Rezo a sove");
   } catch (err) { toast(err.message); }
 });
@@ -631,6 +642,7 @@ $("form-meru").addEventListener("submit", async (e) => {
     });
     $("m-ok").textContent = r.pending ? "Chanjman an ap aktive nan 10 minit" : "Adrès la sove";
     $("m-ok").classList.remove("hidden");
+    clearDirty(e.target);
     loadSettings();
   } catch (err) {
     $("m-error").textContent = err.message;
