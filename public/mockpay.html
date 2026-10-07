@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>MonCash — Peman (Similasyon)</title>
+<title>Peman — Similasyon</title>
 <style>
   * { box-sizing: border-box; margin: 0; font-family: system-ui, sans-serif; }
   body { background: #f4f4f5; min-height: 100vh; display: flex;
@@ -36,7 +36,7 @@
 </head>
 <body>
 <div class="card">
-  <div class="head"><h1>MonCash</h1><small>Peman anliy — Digicel</small></div>
+  <div class="head"><h1 id="brand">PLOP PLOP</h1><small id="sub">Peman anliy</small></div>
   <div class="body">
     <div class="banner">SIMILASYON — okenn lajan reyèl pa deplase</div>
     <div id="loading">Chajman…</div>
@@ -66,6 +66,18 @@ async function load() {
   if (!tx) { $("loading").textContent = "Tranzaksyon pa jwenn (pa gen ?tx=)"; return; }
   try {
     const info = await api("/api/mock/pay/" + encodeURIComponent(tx));
+    const brands = {moncash: ["MonCash", "Peman anliy — Digicel", "#e60012"],
+                    natcash: ["NatCash", "Peman anliy — Natcom", "#0057a8"],
+                    kashpaw: ["KashPaw", "Peman anliy", "#6d28d9"],
+                    carte: ["Kat", "Peman pa kat — Square", "#15803d"],
+                    all: ["PLOP PLOP", "Chwazi metòd peman an", "#e60012"],
+                    moncash_ussd: ["MonCash", "Peman USSD — Digicel", "#e60012"]};
+    const b = brands[info.method] || ["PLOP PLOP", "Peman anliy", "#e60012"];
+    document.querySelector(".head").style.background = b[2];
+    $("pay").style.background = b[2];
+    $("brand").textContent = b[0];
+    $("sub").textContent = b[1];
+    document.title = b[0] + " — Peman (Similasyon)";
     $("amt").textContent = Number(info.amount).toLocaleString("fr-HT") + " HTG";
     $("ref").textContent = "Ref: " + info.reference_id + " · " + tx;
     if (info.trans_status !== "no") {
