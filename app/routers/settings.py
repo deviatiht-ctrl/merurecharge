@@ -36,6 +36,7 @@ EDITABLE_KEYS = {
 
 @router.get("")
 def get_settings(db: Session = Depends(get_db), _s=Depends(current_session)):
+    worker.apply_pending_meru(db)  # aplike chanjman ki pase delè a touswit
     out = {k: get_setting(db, k) for k in SAFE_KEYS}
     out["has_plop_credentials"] = bool(config.PLOP_CLIENT_ID)
     out["has_wallet_secret"] = bool(config.WALLET_SECRET)
@@ -106,15 +107,18 @@ def set_meru(body: MeruBody, request: Request, db: Session = Depends(get_db),
     if not verify_password(body.password, get_setting(db, "password_hash") or ""):
         audit(db, "meru.change_denied", ip=ip)
         raise HTTPException(401, "Modpas la pa kòrèk")
-    if not get_setting(db, "meru_address"):
-        # Premye adrès — aplike imedyatman
+    current = get_setting(db, "meru_address")
+    if not current or current == body.address:
+        # Premye adrès oswa menm adrès (mizajou memo/verified) — imedyat
         set_setting(db, "meru_address", body.address)
         set_setting(db, "meru_memo", body.memo)
         set_setting(db, "meru_verified", body.verified)
+        if get_setting(db, "pending_meru"):
+            set_setting(db, "pending_meru", None)  # anile pending si genyen
         db.commit()
         audit(db, "meru.set", body.address, ip)
         return {"ok": True, "pending": False}
-    # Chanjman — delè 10 minit + alèt
+    # Nouvo adrès — delè 10 minit + alèt
     pending = {"address": body.address, "memo": body.memo,
                "verified": body.verified,
                "activate_at": (utcnow() + timedelta(minutes=10)).isoformat()}
