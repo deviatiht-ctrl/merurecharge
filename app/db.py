@@ -52,9 +52,29 @@ def get_db():
 
 def init_db():
     from . import models  # noqa: F401
+    from sqlalchemy import text
 
     Base.metadata.create_all(engine)
+    _harden_postgres(text)
     seed_settings()
+
+
+def _harden_postgres(text):
+    """Sou Supabase/Postgres: aktive RLS sou tout tablo yo.
+
+    Kle 'anon' PostgREST la piblik — san RLS li ta ka li/ekri tablo yo.
+    Role 'postgres' (pwopriyetè) pa afekte pa RLS, donk backend la mache nòmal;
+    kle anon/service pa jwenn anyen nan /rest/v1/."""
+    if engine.dialect.name != "postgresql":
+        return
+    try:
+        with engine.begin() as conn:
+            for name in Base.metadata.tables:
+                conn.execute(
+                    text(f'ALTER TABLE public."{name}" '
+                         f"ENABLE ROW LEVEL SECURITY"))
+    except Exception:
+        pass  # pa kraze si nou pa pwopriyetè tablo yo
 
 
 def seed_settings():

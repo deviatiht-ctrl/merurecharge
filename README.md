@@ -46,12 +46,18 @@ Ou dwe itilize yon baz done ekstèn:
 
 **Supabase (rekòmande — Postgres hosted, gratis):**
 1. Kreye yon pwojè sou supabase.com
-2. Dashboard → **Connect** → kopye chain "Transaction pooler" la (port 6543 — enpòtan pou serverless):
+2. Dashboard → **Connect** → kopye chain **"Transaction pooler"** la (port 6543
+   — enpòtan pou serverless):
 ```
-DATABASE_URL=postgresql://postgres.<ref>:<modpas>@aws-0-<rejyonal>.pooler.supabase.com:6543/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres.<ref>:<modpas-baz-done>@aws-0-<rejyonal>.pooler.supabase.com:6543/postgres?sslmode=require
 ```
-Tablo yo kreye otomatikman (`init_db`) nan premye request la — pa gen migrasyon
-manyèl. Pa aktive RLS sou tablo yo (backend la jere sekirite a).
+   `<modpas-baz-done>` = modpas baz done a (sa ou mete lè w kreye pwojè a;
+   ou ka reyiniysalize l nan Project Settings → Database).
+   **Atansyon**: URL `https://<ref>.supabase.co/rest/v1` ak kle `anon`/`service_role`
+   yo se pou API PostgREST la — backend la PA itilize yo. Li bezwen URL pooler la.
+   `init_db` aktive RLS sou tout tablo otomatikman, donk kle anon a pa ka li
+   done ou yo menm si li pibliye.
+3. Tablo yo kreye otomatikman nan premye request la — pa gen migrasyon manyèl.
 
 **Turso (konpatib SQLite):**
 ```bash
