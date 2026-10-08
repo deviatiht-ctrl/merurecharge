@@ -31,11 +31,15 @@ TURSO_AUTH_TOKEN = env("TURSO_AUTH_TOKEN")
 
 # --- Wallet ---
 WALLET_ASSET = env("WALLET_ASSET", "USDC")
-WALLET_NETWORK = env("WALLET_NETWORK", "stellar")  # stellar | trc20
+WALLET_NETWORK = env("WALLET_NETWORK", "stellar")  # stellar | trc20 | polygon
 WALLET_SECRET = env("WALLET_SECRET")
 USDC_ISSUER = env("USDC_ISSUER", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN")
 HORIZON_URL = env("HORIZON_URL", "https://horizon.stellar.org")
 TRONGRID_API_KEY = env("TRONGRID_API_KEY")
+POLYGON_RPC = env("POLYGON_RPC", "https://polygon-rpc.com")
+# USDC natif sou Polygon (Circle) — pa konfonn ak USDC.e bridged (0x2791...)
+POLYGON_USDC_CONTRACT = env(
+    "POLYGON_USDC_CONTRACT", "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359")
 
 # --- Meru ---
 MERU_ADDRESS = env("MERU_ADDRESS")

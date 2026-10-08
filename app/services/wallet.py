@@ -1,6 +1,8 @@
-"""Kliyan wallet reyèl — USDC sou Stellar (default) oswa USDT TRC-20 sou TRON.
+"""Kliyan wallet reyèl — USDC sou Stellar oswa Polygon, USDT TRC-20 sou TRON.
 
-Enpòt yo fèt lazily pou mòd mock la pa bezwen stellar-sdk/tronpy enstale.
+Enpòt yo fèt lazily pou mòd mock la pa bezwen stellar-sdk/tronpy/web3 enstale.
+Polygon se rezo a ki pi senp: pa gen aktivasyon, pa gen trustline,
+pa gen rezèv minimòm — sèlman ti POL pou gas (~$0.005/tx).
 """
 from datetime import datetime
 from decimal import Decimal
@@ -154,6 +156,94 @@ class TronWallet:
         return Decimal("1")
 
 
+class PolygonWallet:
+    """USDC (ERC-20) sou Polygon. Pa gen aktivasyon — adrès la egziste nèt.
+    Sèl bezwen: ti POL pou gas (~0.005 pa tranzaksyon)."""
+
+    CHAIN_ID = 137
+    TRANSFER_SIG = ("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+    ERC20_ABI = [
+        {"name": "balanceOf", "type": "function", "stateMutability": "view",
+         "inputs": [{"name": "account", "type": "address"}],
+         "outputs": [{"name": "", "type": "uint256"}]},
+        {"name": "transfer", "type": "function", "stateMutability": "nonpayable",
+         "inputs": [{"name": "to", "type": "address"},
+                    {"name": "amount", "type": "uint256"}],
+         "outputs": [{"name": "", "type": "bool"}]},
+    ]
+
+    def __init__(self, secret: str, rpc_url: str | None = None):
+        try:
+            from web3 import Web3
+        except ImportError:
+            raise WalletError("web3 pa enstale (pip install web3)")
+        if not secret:
+            raise WalletError("WALLET_SECRET pa konfigire")
+        self.w3 = Web3(Web3.HTTPProvider(rpc_url or config.POLYGON_RPC,
+                                         request_kwargs={"timeout": 20}))
+        key = secret if secret.startswith("0x") else "0x" + secret
+        self.acct = self.w3.eth.account.from_key(key)
+        self.address = self.acct.address
+        self.usdc = self.w3.eth.contract(
+            address=Web3.to_checksum_address(config.POLYGON_USDC_CONTRACT),
+            abi=self.ERC20_ABI)
+
+    def _units(self, amount) -> int:
+        return int(_dec(amount) * Decimal(10) ** 6)
+
+    def get_balance(self) -> Decimal:
+        try:
+            raw = self.usdc.functions.balanceOf(self.address).call()
+            return _dec(raw) / Decimal(10) ** 6
+        except Exception as e:
+            raise WalletError(f"Polygon RPC: {e}")
+
+    def send(self, amount: Decimal, address: str, memo: str | None = None) -> str:
+        try:
+            tx = self.usdc.functions.transfer(
+                self.w3.to_checksum_address(address), self._units(amount)
+            ).build_transaction({
+                "from": self.address,
+                "nonce": self.w3.eth.get_transaction_count(self.address),
+                "chainId": self.CHAIN_ID,
+            })
+            signed = self.w3.eth.account.sign_transaction(tx, self.acct.key)
+            txh = self.w3.eth.send_raw_transaction(signed.raw_transaction)
+            return txh.hex()
+        except Exception as e:
+            raise WalletError(f"Polygon send echwe: {e}")
+
+    def tx_status(self, tx_hash: str) -> str:
+        try:
+            r = self.w3.eth.get_transaction_receipt(tx_hash)
+            if r is None:
+                return "pending"
+            return "confirmed" if r["status"] == 1 else "failed"
+        except Exception:
+            return "pending"
+
+    def find_outgoing(self, address: str, amount: Decimal, memo: str | None,
+                      since: datetime) -> str | None:
+        """Jwenn Transfer USDC soti nan float la -> adrès la (idempotans)."""
+        try:
+            pad = lambda a: "0x" + a.lower().replace("0x", "").rjust(64, "0")
+            logs = self.w3.eth.get_logs({
+                "address": self.usdc.address,
+                "topics": [self.TRANSFER_SIG, pad(self.address), pad(address)],
+                "fromBlock": max(0, self.w3.eth.block_number - 100_000),
+                "toBlock": "latest",
+            })
+            for l in reversed(logs):
+                if int(l["data"], 16) == self._units(amount):
+                    return l["transactionHash"].hex()
+        except Exception:
+            pass
+        return None
+
+    def network_fee(self) -> Decimal:
+        return Decimal("0.01")
+
+
 def get_real_wallet(asset: str | None = None, network: str | None = None):
     asset = (asset or config.WALLET_ASSET).upper()
     network = (network or config.WALLET_NETWORK).lower()
@@ -162,4 +252,6 @@ def get_real_wallet(asset: str | None = None, network: str | None = None):
                              config.HORIZON_URL)
     if network == "trc20":
         return TronWallet(config.WALLET_SECRET, config.TRONGRID_API_KEY)
+    if network == "polygon":
+        return PolygonWallet(config.WALLET_SECRET, config.POLYGON_RPC)
     raise WalletError(f"Rezo '{network}' pa sipòte")

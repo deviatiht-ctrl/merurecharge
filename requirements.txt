@@ -10,6 +10,7 @@ pytest>=8.0,<9.0
 # Wallet reyèl (enpòte sèlman lè MOCK_MODE=false)
 stellar-sdk>=12.0,<13.0
 tronpy>=0.5,<1.0
+web3>=7.0,<8.0
 
 # Baz done pou Vercel (chwazi youn: Turso oswa Postgres)
 # sqlalchemy-libsql sèlman sou Linux (Vercel) — pa nesesè lokalman sou Windows

@@ -51,8 +51,8 @@ def update_settings(body: dict, request: Request,
             continue
         if k == "fee_model" and v not in ("dedwi", "sou_tet"):
             raise HTTPException(400, "fee_model: 'dedwi' oswa 'sou_tet'")
-        if k == "wallet_network" and v not in ("stellar", "trc20"):
-            raise HTTPException(400, "wallet_network: 'stellar' oswa 'trc20'")
+        if k == "wallet_network" and v not in ("stellar", "trc20", "polygon"):
+            raise HTTPException(400, "wallet_network: 'stellar', 'trc20' oswa 'polygon'")
         set_setting(db, k, v)
     db.commit()
     audit(db, "settings.updated", ",".join(k for k in body if k in EDITABLE_KEYS),
